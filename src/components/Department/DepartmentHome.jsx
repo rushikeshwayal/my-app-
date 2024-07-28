@@ -7,7 +7,7 @@ function DepartmentHome() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const response = await fetch('  '); // Use relative path if proxy is set
+        const response = await fetch(' http://localhost:5000/api/healthcare '); // Use relative path if proxy is set
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
@@ -17,6 +17,7 @@ function DepartmentHome() {
         console.error('Error fetching data:', error);
         setError(error.message);
       }
+      
     }
 
     fetchData();
