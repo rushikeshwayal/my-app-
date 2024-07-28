@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
 function RegistrationForm() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    department: '', // New state for department
+    department: '',
   });
 
   const [errors, setErrors] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    department: '', // New error state for department
+    department: '',
   });
+
+  const [registrationError, setRegistrationError] = useState('');
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -32,8 +33,7 @@ function RegistrationForm() {
       name: '',
       email: '',
       password: '',
-      confirmPassword: '',
-      department: '', // Validate department
+      department: '',
     };
 
     if (!formData.name) {
@@ -52,15 +52,13 @@ function RegistrationForm() {
     if (!formData.password) {
       newErrors.password = 'Password is required';
       isValid = false;
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters long';
       isValid = false;
     }
 
     if (!formData.department) {
-      newErrors.department = 'Department selection is required';
+      newErrors.department = 'Department is required';
       isValid = false;
     }
 
@@ -68,11 +66,31 @@ function RegistrationForm() {
     return isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      // Handle form submission (e.g., API call)
-      console.log('Form submitted:', formData);
+      try {
+        const response = await fetch('http://localhost:5000/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          console.log('Registration successful:', result);
+          navigate('/login');
+        } else {
+          const errorData = await response.json();
+          setRegistrationError(errorData.message);
+          console.error('Registration error:', errorData);
+        }
+      } catch (error) {
+        console.error('Network error:', error);
+        setRegistrationError('Network error. Please check your connection.');
+      }
     }
   };
 
@@ -129,22 +147,6 @@ function RegistrationForm() {
         </div>
 
         <div className="mb-4">
-          <label className="block text-gray-700 mb-2" htmlFor="confirmPassword">
-            Confirm Password
-          </label>
-          <input
-            type="password"
-            id="confirmPassword"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-            placeholder="Confirm your password"
-          />
-          {errors.confirmPassword && <p className="text-red-500 text-sm">{errors.confirmPassword}</p>}
-        </div>
-
-        <div className="mb-4">
           <label className="block text-gray-700 mb-2" htmlFor="department">
             Department
           </label>
@@ -164,6 +166,8 @@ function RegistrationForm() {
           </select>
           {errors.department && <p className="text-red-500 text-sm">{errors.department}</p>}
         </div>
+
+        {registrationError && <p className="text-red-500 text-sm mb-4">{registrationError}</p>}
 
         <button
           type="submit"
